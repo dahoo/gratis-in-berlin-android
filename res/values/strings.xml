@@ -1,0 +1,14 @@
+<resources>
+
+    <string name="app_name">Gratis in Berlin</string>
+    <string name="title_section3">Übermorgen</string>
+    <string name="title_section2">Morgen</string>
+    <string name="title_section1">Heute</string>
+    <string name="menu_settings">Settings</string>
+    <string name="title_activity_main">Gratis in Berlin</string>
+    <string name="title_activity_event_detail">Tipp</string>
+    <string name="title_section4">Dieser Monat</string>
+    <string name="add_event">Kalendereintrag hinzufügen</string>
+    <string name="add_event_short">In Kalender</string>
+
+</resources>

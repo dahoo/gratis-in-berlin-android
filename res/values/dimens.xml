@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="event_list_textsize">9pt</dimen>
+    <dimen name="event_title_textsize">10pt</dimen>
+</resources>
