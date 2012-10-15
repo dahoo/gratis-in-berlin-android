@@ -118,11 +118,16 @@ public class MainActivity extends SherlockFragmentActivity {
 		int month = c.get(Calendar.MONTH);
 		int year = c.get(Calendar.YEAR);
 		
+		c.add(Calendar.MONTH, 1);
+		int nextMonth = c.get(Calendar.MONTH);
+		int nextMonthsYear = c.get(Calendar.YEAR);
 		
 		String[] urls = { "http://www.gratis-in-berlin.de/heute",
 				"http://www.gratis-in-berlin.de/morgen",
 				"http://www.gratis-in-berlin.de/uebermorgen", 
-				"http://www.gratis-in-berlin.de/monat/" + (month + 1) + "." + year};
+				"http://www.gratis-in-berlin.de/monat/" + (month + 1) + "." + year, 
+				"http://www.gratis-in-berlin.de/monat/" + (nextMonth + 1) + "." + nextMonthsYear,
+				"http://www.gratis-in-berlin.de/tippsnach/" + (nextMonth + 1) + "." + nextMonthsYear};
 
 		items = new ArrayList<List<Event>>();
 
@@ -185,7 +190,7 @@ public class MainActivity extends SherlockFragmentActivity {
 
 		@Override
 		public int getCount() {
-			return 4;
+			return 6;
 		}
 
 		@Override
@@ -201,9 +206,12 @@ public class MainActivity extends SherlockFragmentActivity {
 			case 3:
 				return c.getDisplayName(Calendar.MONTH, Calendar.LONG, Locale.GERMAN)
 						.toUpperCase();
-//			case 4:
-//				return DateUtils.getMonthString(c.get(Calendar.MONTH) + 1, DateUtils.LENGTH_LONG)
-//						.toUpperCase();
+			case 4:
+				c.add(Calendar.MONTH, 1);
+				return c.getDisplayName(Calendar.MONTH, Calendar.LONG, Locale.GERMAN)
+						.toUpperCase();
+			case 5:
+				return "SPÄTER";
 			}
 			return null;
 		}
