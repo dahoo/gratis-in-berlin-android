@@ -1,9 +1,9 @@
 package de.hoffmann90.gratis.in.berlin;
 
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.GregorianCalendar;
 import java.util.List;
-import java.util.concurrent.ExecutionException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -16,6 +16,7 @@ import org.jsoup.nodes.Document;
 import org.jsoup.select.Elements;
 
 import android.annotation.SuppressLint;
+import android.app.AlertDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.drawable.Drawable;
@@ -43,21 +44,33 @@ public class EventDetail extends SherlockActivity {
 	private class RetrievePage extends AsyncTask<String, Void, Elements> {
 
 		private Exception exception;
+		private EventDetail activity;
 
+		@Override
 		protected void onPostExecute(Elements t) {
-
-			// TODO: check this.exception
-			// TODO: do something with the feed
 			if (this.exception != null) {
 				this.exception.printStackTrace();
+				activity.handleError(exception);
 			} else {
 			}
 		}
+		
+		RetrievePage attach(EventDetail activity) {
+		      this.activity=activity;
+		      return this;
+		    }
 
 		@Override
 		protected Elements doInBackground(String... urls) {
 			DefaultHttpClient httpClient = new DefaultHttpClient();
-			HttpGet httpGet = new HttpGet(urls[0]);
+			HttpGet httpGet;
+			try {
+				httpGet = new HttpGet(urls[0]);
+			} catch (IllegalArgumentException e) {
+				this.exception = e;
+				return null;
+			}
+			
 			ResponseHandler<String> resHandler = new BasicResponseHandler();
 			try {
 				String html = httpClient.execute(httpGet, resHandler);
@@ -83,7 +96,7 @@ public class EventDetail extends SherlockActivity {
 		String message = intent.getStringExtra(MainActivity.EXTRA_URL);
 
 		AsyncTask<String, Void, Elements> pageTask = new RetrievePage()
-				.execute(message);
+			.attach(this).execute(message);
 
 		Elements text = null;
 		try {
@@ -92,16 +105,8 @@ public class EventDetail extends SherlockActivity {
 			e.printStackTrace();
 		}
 		
-		if(text == null) {
-			NavUtils.navigateUpFromSameTask(this);
-			Context context = getApplicationContext();
-			CharSequence toastText = "Fehler beim Abrufen der Seite. Bitte überprüfe deine Internetverbindung.";
-			int duration = Toast.LENGTH_SHORT;
-
-			Toast toast = Toast.makeText(context, toastText, duration);
-			toast.show();
-			return;
-		}
+		if(text == null)
+			return;			
 
 		title = text.select("div#eventHeadline").text();
 		date = text.select("div#eventText b").first().text();
@@ -174,7 +179,22 @@ public class EventDetail extends SherlockActivity {
 		linkText.setText(Html.fromHtml(linkHTML));
 		linkText.setMovementMethod(LinkMovementMethod.getInstance());
 	}
+		
+	private void handleError(Throwable t) {
+		Context context = getApplicationContext();
+		CharSequence toastText;
+		if (t instanceof IllegalArgumentException) {
+			toastText = "Ungültiges Zeichen in URL.";
+		} else {
+			toastText = "Fehler beim Abrufen der Seite.";
+		}
+		int duration = Toast.LENGTH_LONG;
 
+		Toast toast = Toast.makeText(context, toastText, duration);
+		toast.show();
+		NavUtils.navigateUpFromSameTask(this);
+	  }
+		
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
 		getSupportMenuInflater().inflate(R.menu.activity_event_detail, menu);
@@ -198,30 +218,43 @@ public class EventDetail extends SherlockActivity {
 				calIntent.putExtra(Events.TITLE, title);
 				calIntent.putExtra(Events.EVENT_LOCATION, location);
 				calIntent.putExtra(Events.DESCRIPTION, details + "\n\n" + link);
-				System.out.println(date);
-				String[] dates = date.split("bis");
-				String fromDate = dates[0].trim();
-				System.out.println(fromDate);
-				String[] fromDateParts = fromDate.split("\\.");
-				GregorianCalendar calDate = new GregorianCalendar(
-						Integer.parseInt(fromDateParts[2]),
-						Integer.parseInt(fromDateParts[1]) - 1,
-						Integer.parseInt(fromDateParts[0]));
+				
+				Calendar beginCalDate;
+				Calendar endCalDate;
+				if(date == "Dauerbrenner") {
+					beginCalDate = Calendar.getInstance();
+					endCalDate = beginCalDate;
+				}
+				else {
+					String[] dates = date.split("bis");
+					String fromDate = dates[0].trim();
+					System.out.println(fromDate);
+					String[] fromDateParts = fromDate.split("\\.");
+					beginCalDate = new GregorianCalendar(
+							Integer.parseInt(fromDateParts[2]),
+							Integer.parseInt(fromDateParts[1]) - 1,
+							Integer.parseInt(fromDateParts[0]));
+					
+					if(dates.length > 1) {
+						String toDate = dates[1].trim();
+						System.out.println(toDate);
+						String[] toDateParts = toDate.split("\\.");
+						endCalDate = new GregorianCalendar(
+								Integer.parseInt(toDateParts[2]),
+								Integer.parseInt(toDateParts[1]) - 1,
+								Integer.parseInt(toDateParts[0]) + 1);
+					}
+					else {
+						endCalDate = beginCalDate;
+					}
+				}
+				
 				calIntent.putExtra(CalendarContract.EXTRA_EVENT_ALL_DAY, true);
 				calIntent.putExtra(CalendarContract.EXTRA_EVENT_BEGIN_TIME,
-						calDate.getTimeInMillis());
-				if(dates.length > 1)
-				{
-					String toDate = dates[1].trim();
-					System.out.println(toDate);
-					String[] toDateParts = toDate.split("\\.");
-					calDate = new GregorianCalendar(
-							Integer.parseInt(toDateParts[2]),
-							Integer.parseInt(toDateParts[1]) - 1,
-							Integer.parseInt(toDateParts[0]) + 1);
-				}
+						beginCalDate.getTimeInMillis());
+				
 				calIntent.putExtra(CalendarContract.EXTRA_EVENT_END_TIME,
-						calDate.getTimeInMillis());
+						endCalDate.getTimeInMillis());
 				startActivity(calIntent);
 			}
 			return true;
