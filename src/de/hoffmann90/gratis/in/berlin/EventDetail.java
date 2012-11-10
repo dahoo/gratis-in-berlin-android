@@ -1,5 +1,8 @@
 package de.hoffmann90.gratis.in.berlin;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
@@ -16,7 +19,6 @@ import org.jsoup.nodes.Document;
 import org.jsoup.select.Elements;
 
 import android.annotation.SuppressLint;
-import android.app.AlertDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.drawable.Drawable;
@@ -39,7 +41,7 @@ import com.actionbarsherlock.view.MenuItem;
 
 public class EventDetail extends SherlockActivity {
 
-	String title, date, details, location, link;
+	String title, date, details, location, link, url;
 
 	private class RetrievePage extends AsyncTask<String, Void, Elements> {
 
@@ -65,8 +67,16 @@ public class EventDetail extends SherlockActivity {
 			DefaultHttpClient httpClient = new DefaultHttpClient();
 			HttpGet httpGet;
 			try {
-				httpGet = new HttpGet(urls[0]);
+				//URI uri = new URI(urls[0]);
+				String url = new String(urls[0].getBytes("ISO-8859-1"));
+				httpGet = new HttpGet(url);
 			} catch (IllegalArgumentException e) {
+				this.exception = e;
+				return null;
+//			} catch (URISyntaxException e) {
+//				this.exception = e;
+//				return null;
+			} catch (UnsupportedEncodingException e) {
 				this.exception = e;
 				return null;
 			}
@@ -93,10 +103,10 @@ public class EventDetail extends SherlockActivity {
 
 		// Get the message from the intent
 		Intent intent = getIntent();
-		String message = intent.getStringExtra(MainActivity.EXTRA_URL);
+		url = intent.getStringExtra(MainActivity.EXTRA_URL);
 
 		AsyncTask<String, Void, Elements> pageTask = new RetrievePage()
-			.attach(this).execute(message);
+			.attach(this).execute(url);
 
 		Elements text = null;
 		try {
@@ -111,11 +121,13 @@ public class EventDetail extends SherlockActivity {
 		title = text.select("div#eventHeadline").text();
 		date = text.select("div#eventText b").first().text();
 		details = text.select("div#eventText").text();
-		String linkHTML = text.select("div#eventURL a").outerHtml();
+		String linkHTML;
 		try {
 			link = text.select("div#eventURL a").first().attr("href");
+			linkHTML = text.select("div#eventURL a").first().outerHtml();
 		} catch (NullPointerException e) {
 			link = "";
+			linkHTML = "";
 		}
 		String admission = "";
 
@@ -182,7 +194,7 @@ public class EventDetail extends SherlockActivity {
 		
 	private void handleError(Throwable t) {
 		Context context = getApplicationContext();
-		CharSequence toastText;
+		CharSequence toastText = "Fehler.";
 		if (t instanceof IllegalArgumentException) {
 			toastText = "Ungültiges Zeichen in URL.";
 		} else {
@@ -217,7 +229,12 @@ public class EventDetail extends SherlockActivity {
 				calIntent.setData(CalendarContract.Events.CONTENT_URI);
 				calIntent.putExtra(Events.TITLE, title);
 				calIntent.putExtra(Events.EVENT_LOCATION, location);
-				calIntent.putExtra(Events.DESCRIPTION, details + "\n\n" + link);
+				String description = details;
+				if (!link.equals("")) {
+					description += "\n\n" + link;
+				}
+				description += "\n\n" + url;
+				calIntent.putExtra(Events.DESCRIPTION, description);
 				
 				Calendar beginCalDate;
 				Calendar endCalDate;
@@ -258,6 +275,11 @@ public class EventDetail extends SherlockActivity {
 				startActivity(calIntent);
 			}
 			return true;
+			
+		case R.id.open_in_browser:
+			Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
+			startActivity(browserIntent);
+
 		}
 		return super.onOptionsItemSelected(item);
 	}

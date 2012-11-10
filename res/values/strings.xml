@@ -7,8 +7,10 @@
     <string name="menu_settings">Settings</string>
     <string name="title_activity_main">Gratis in Berlin</string>
     <string name="title_activity_event_detail">Tipp</string>
-    <string name="title_section4">Dieser Monat</string>
     <string name="add_event">Kalendereintrag hinzufügen</string>
     <string name="add_event_short">In Kalender</string>
+    <string name="app_versionName">1.1</string>
+    <string name="open_in_browser">In Browser öffnen</string>
+    <string name="browser">Browser</string>
 
 </resources>

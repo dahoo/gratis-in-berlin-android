@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
 import java.util.Locale;
+
 import org.apache.http.client.ResponseHandler;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.BasicResponseHandler;
@@ -13,8 +14,12 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
+import android.app.AlertDialog;
+import android.app.AlertDialog.Builder;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
+import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
@@ -38,6 +43,8 @@ import com.actionbarsherlock.view.Menu;
 public class MainActivity extends SherlockFragmentActivity {
 
 	public static final String EXTRA_URL = "de.hoffmann90.gratis.in.berlin.URL";
+	private static final String VERSION_URL = "http://hoffmann90.de/gratis-in-berlin/version";
+	private static final String DOWNLOAD_URL = "http://hoffmann90.de/gratis-in-berlin";
 
 	/**
 	 * The {@link android.support.v4.view.PagerAdapter} that will provide
@@ -58,16 +65,13 @@ public class MainActivity extends SherlockFragmentActivity {
 
 		private Exception exception;
 
-		private Elements text;
-
 		protected void onPostExecute(Elements t) {
 
 			// TODO: check this.exception
 			// TODO: do something with the feed
 			if (this.exception != null) {
 				this.exception.printStackTrace();
-			} else
-				text = t;
+			}
 		}
 
 		@Override
@@ -94,6 +98,30 @@ public class MainActivity extends SherlockFragmentActivity {
 			}
 		}
 	}
+	
+	private class RetrieveVersion extends AsyncTask<String, Void, String> {
+
+		private Exception exception;
+
+		protected void onPostExecute(String version) {
+			if (this.exception != null) {
+				this.exception.printStackTrace();
+			}
+		}
+
+		@Override
+		protected String doInBackground(String... urls) {
+			DefaultHttpClient httpClient = new DefaultHttpClient();
+			HttpGet httpGet = new HttpGet(urls[0]);
+			ResponseHandler<String> resHandler = new BasicResponseHandler();
+			try {
+				return httpClient.execute(httpGet, resHandler);
+			} catch (Exception e) {
+				this.exception = e;
+				return null;
+			}
+		}
+	}
 
 	static List<List<Event>> items;
 
@@ -101,6 +129,46 @@ public class MainActivity extends SherlockFragmentActivity {
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
+		
+		AsyncTask<String, Void, String> versionTask = new RetrieveVersion()
+			.execute(VERSION_URL);
+		
+		String version = null;
+		try {
+			version = versionTask.get();
+			
+			if(!version.contains(getString(R.string.app_versionName)))
+			{
+			    Builder builder = new AlertDialog.Builder(MainActivity.this);
+			    builder.setTitle("Neue Version verfügbar!");
+			    //builder.setIcon(android.R.drawable.ic_dialog_alert);
+			    builder.setMessage("Möchtest du die neue Version jetzt herunterladen?");
+			    builder.setPositiveButton("Download",
+			            new DialogInterface.OnClickListener() {
+			                public void onClick(DialogInterface dialog, int id) {
+			                	Intent browserIntent = new Intent(Intent.ACTION_VIEW, 
+			                			Uri.parse(DOWNLOAD_URL));
+			                	startActivity(browserIntent);
+			                }
+			            });
+
+			    builder.setNegativeButton("Abbrechen",
+			            new DialogInterface.OnClickListener() {
+			                public void onClick(DialogInterface dialog, int id) {
+			                    dialog.cancel();
+			                }
+			            });
+			    
+				// create alert dialog
+				AlertDialog alertDialog = builder.create();
+
+				// show it
+				alertDialog.show();
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		
 		// Create the adapter that will return a fragment for each of the three
 		// primary sections
 		// of the app.

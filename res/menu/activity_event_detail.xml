@@ -12,5 +12,12 @@
         android:title="@string/add_event" 
         android:showAsAction="ifRoom|withText">
     </item>
+    <item
+        android:id="@+id/open_in_browser"
+        android:icon="@android:drawable/ic_menu_compass"
+        android:title="@string/open_in_browser" 
+        android:titleCondensed="@string/browser" 
+        android:showAsAction="ifRoom|withText">
+    </item>
 
 </menu>
