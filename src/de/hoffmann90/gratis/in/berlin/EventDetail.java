@@ -1,21 +1,13 @@
 package de.hoffmann90.gratis.in.berlin;
 
-import java.io.UnsupportedEncodingException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.util.ArrayList;
+import java.io.IOException;
+import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
-import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
-import org.apache.http.client.ResponseHandler;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.BasicResponseHandler;
-import org.apache.http.impl.client.DefaultHttpClient;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import android.annotation.SuppressLint;
@@ -43,13 +35,13 @@ public class EventDetail extends SherlockActivity {
 
 	String title, date, details, location, link, url;
 
-	private class RetrievePage extends AsyncTask<String, Void, Elements> {
+	private class RetrievePage extends AsyncTask<String, Void, Element> {
 
 		private Exception exception;
 		private EventDetail activity;
 
 		@Override
-		protected void onPostExecute(Elements t) {
+		protected void onPostExecute(Element t) {
 			if (this.exception != null) {
 				this.exception.printStackTrace();
 				activity.handleError(exception);
@@ -63,35 +55,16 @@ public class EventDetail extends SherlockActivity {
 		    }
 
 		@Override
-		protected Elements doInBackground(String... urls) {
-			DefaultHttpClient httpClient = new DefaultHttpClient();
-			HttpGet httpGet;
+		protected Element doInBackground(String... urls) {			
+			Document doc;
 			try {
-				//URI uri = new URI(urls[0]);
-				String url = new String(urls[0].getBytes("ISO-8859-1"));
-				httpGet = new HttpGet(url);
-			} catch (IllegalArgumentException e) {
-				this.exception = e;
-				return null;
-//			} catch (URISyntaxException e) {
-//				this.exception = e;
-//				return null;
-			} catch (UnsupportedEncodingException e) {
-				this.exception = e;
-				return null;
+				doc = Jsoup.connect(url).get();
+		        Element elementsHtml = doc.getElementById("gib_tip");
+				return elementsHtml;
+			} catch (IOException e) {
+				e.printStackTrace();
 			}
-			
-			ResponseHandler<String> resHandler = new BasicResponseHandler();
-			try {
-				String html = httpClient.execute(httpGet, resHandler);
-				Document doc = Jsoup.parse(html);
-
-				Elements elements = doc.select("div#showleft");
-				return elements;
-			} catch (Exception e) {
-				this.exception = e;
-				return null;
-			}
+	        return null;
 		}
 	}
 
@@ -105,10 +78,10 @@ public class EventDetail extends SherlockActivity {
 		Intent intent = getIntent();
 		url = intent.getStringExtra(MainActivity.EXTRA_URL);
 
-		AsyncTask<String, Void, Elements> pageTask = new RetrievePage()
+		AsyncTask<String, Void, Element> pageTask = new RetrievePage()
 			.attach(this).execute(url);
 
-		Elements text = null;
+		Element text = null;
 		try {
 			text = pageTask.get();
 		} catch (Exception e) {
@@ -118,47 +91,29 @@ public class EventDetail extends SherlockActivity {
 		if(text == null)
 			return;			
 
-		title = text.select("div#eventHeadline").text();
-		date = text.select("div#eventText b").first().text();
-		details = text.select("div#eventText").text();
+		Elements itemProps = text.select("[itemprop]");
+		title = itemProps.select("[itemprop=name]").text();
+		SimpleDateFormat dateParser=new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
+		SimpleDateFormat germanDateFormat = new SimpleDateFormat("dd.MM.yyyy");
+		try {
+			String dateString = itemProps.select("[itemprop=startDate]").first().attr("content");
+			date =  germanDateFormat.format(dateParser.parse(dateString));
+		} catch (Exception e1) {
+			e1.printStackTrace();
+			date = "";
+		}
+		//TODO: Get end date (if available)
+		details = itemProps.select("[itemprop=description]").text().trim();
+		location = itemProps.select("[itemprop=location]").text().replace(" - zum Stadplan", "").trim();
 		String linkHTML;
 		try {
-			link = text.select("div#eventURL a").first().attr("href");
-			linkHTML = text.select("div#eventURL a").first().outerHtml();
+			link = text.select("div.urlInfo a").first().attr("href");
+			linkHTML = text.select("div.urlInfo a").first().outerHtml();
 		} catch (NullPointerException e) {
 			link = "";
 			linkHTML = "";
 		}
 		String admission = "";
-
-		Pattern pattern = Pattern
-				.compile("Kostenlos(.*Einschränkung:.*</div>)?");
-		Matcher matcher = pattern.matcher(text.select("div#eventText").html());
-		// Check all occurance
-		List<String> matches = new ArrayList<String>();
-		while (matcher.find()) {
-			matches.add(Jsoup.parse(matcher.group()).text());
-			System.out.println(matcher.group());
-		}
-
-		admission = matches.get(0);
-
-		// String admission = text.select("div#eventText font").first().text();
-
-		details = details.replace(date, "").replace(admission, "")
-				.replace(", Einschränkung", "Einschränkung")
-				.split("Mehr Infos im Internet:")[0].split("von:")[0].trim();
-
-		if(date.matches(".*\\d\\d\\.\\d\\d\\.\\d\\d\\d\\d.*")) {
-			String[] dateLocation = date.split(",", 2);
-
-			date = dateLocation[0];
-			location = dateLocation[1].replace(", zum Stadtplan", "").trim();
-		}
-		else {
-			location = date;
-			date = "Dauerbrenner";
-		}
 
 		TextView titleText = (TextView) findViewById(R.id.textViewTitle);
 		titleText.setText(title);

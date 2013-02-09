@@ -64,11 +64,9 @@ public class MainActivity extends SherlockFragmentActivity {
 	private class RetrievePage extends AsyncTask<String, Void, Elements> {
 
 		private Exception exception;
-
+		
 		protected void onPostExecute(Elements t) {
 
-			// TODO: check this.exception
-			// TODO: do something with the feed
 			if (this.exception != null) {
 				this.exception.printStackTrace();
 			}
@@ -76,21 +74,9 @@ public class MainActivity extends SherlockFragmentActivity {
 
 		@Override
 		protected Elements doInBackground(String... urls) {
-			DefaultHttpClient httpClient = new DefaultHttpClient();
-			HttpGet httpGet = new HttpGet(urls[0]);
-			System.out.println(urls[0]);
-			ResponseHandler<String> resHandler = new BasicResponseHandler();
 			try {
-				String html = httpClient.execute(httpGet, resHandler);
-				Document doc = Jsoup.parse(html);
-
-				Elements elements = doc.getElementById("showleft")
-						.select("b a");
-				// System.out.println(text.get(1).text());
-				// List<String> result = new ArrayList<String>();
-				// for (Element element : text) {
-				// result.add(element.text());
-				// }
+				Document doc = Jsoup.connect(urls[0]).get();
+				Elements elements = doc.select("div#tipps-overview ul li");
 				return elements;
 			} catch (Exception e) {
 				this.exception = e;
@@ -169,9 +155,6 @@ public class MainActivity extends SherlockFragmentActivity {
 			e.printStackTrace();
 		}
 		
-		// Create the adapter that will return a fragment for each of the three
-		// primary sections
-		// of the app.
 		mSectionsPagerAdapter = new SectionsPagerAdapter(
 				getSupportFragmentManager());
 
@@ -179,20 +162,18 @@ public class MainActivity extends SherlockFragmentActivity {
 		mViewPager = (ViewPager) findViewById(R.id.pager);
 		mViewPager.setAdapter(mSectionsPagerAdapter);
 
-		Calendar c = Calendar.getInstance();
-		int month = c.get(Calendar.MONTH);
-		int year = c.get(Calendar.YEAR);
+		if (items == null)
+			loadData();
 		
-		c.add(Calendar.MONTH, 1);
-		int nextMonth = c.get(Calendar.MONTH);
-		int nextMonthsYear = c.get(Calendar.YEAR);
-		
+	}
+
+	private void loadData() {
 		String[] urls = { "http://www.gratis-in-berlin.de/heute",
 				"http://www.gratis-in-berlin.de/morgen",
 				"http://www.gratis-in-berlin.de/uebermorgen", 
-				"http://www.gratis-in-berlin.de/monat/" + (month + 1) + "." + year, 
-				"http://www.gratis-in-berlin.de/monat/" + (nextMonth + 1) + "." + nextMonthsYear,
-				"http://www.gratis-in-berlin.de/tippsnach/" + (nextMonth + 1) + "." + nextMonthsYear};
+				"http://www.gratis-in-berlin.de/aktueller-monat", 
+				"http://www.gratis-in-berlin.de/naechste-monat",
+				"http://www.gratis-in-berlin.de/spaeter"};
 
 		items = new ArrayList<List<Event>>();
 
@@ -207,14 +188,14 @@ public class MainActivity extends SherlockFragmentActivity {
 				
 				for (Element element : text) {
 					Event event = new Event();
-					event.setTitle(element.text());
-					event.setUrl(element.attr("href"));
+					event.setTitle(element.text().replace("**neu**", "").trim());
+					event.setUrl("http://www.gratis-in-berlin.de/" + 
+							element.select("h2 a").attr("href"));
 					events.add(event);
 				}
 
 				
 			} catch (Exception e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 				Context context = getApplicationContext();
 				CharSequence toastText = "Fehler beim Abrufen der Seite. Bitte überprüfe deine Internetverbindung.";
@@ -232,6 +213,11 @@ public class MainActivity extends SherlockFragmentActivity {
 	public boolean onCreateOptionsMenu(Menu menu) {
 		getSupportMenuInflater().inflate(R.menu.activity_main, menu);
 		return true;
+	}
+	
+	@Override
+	public void onResume(){
+	    super.onResume();
 	}
 
 	/**
@@ -327,9 +313,6 @@ public class MainActivity extends SherlockFragmentActivity {
 				TextView titleTextView = (TextView) view
 						.findViewById(R.id.title);
 				titleTextView.setText(event.title);
-//				TextView dateTextView = (TextView) view
-//						.findViewById(R.id.date);
-//				dateTextView.setText("15.10.2012");
 			}
 
 			public void onItemClick(AdapterView<?> parent, View view,

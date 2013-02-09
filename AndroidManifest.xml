@@ -16,7 +16,8 @@
         android:name="GratisInBerlinApplication">
         <activity
             android:name=".MainActivity"
-            android:label="@string/title_activity_main" >
+            android:label="@string/title_activity_main"
+            configChanges="keyboardHidden|orientation|screenSize">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
@@ -25,7 +26,8 @@
         </activity>
         <activity
             android:name=".EventDetail"
-            android:label="@string/title_activity_event_detail" >
+            android:label="@string/title_activity_event_detail"
+            configChanges="keyboardHidden|orientation|screenSize">
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value="de.hoffmann90.gratis.in.berlin.MainActivity" />
