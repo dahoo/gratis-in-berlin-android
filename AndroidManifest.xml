@@ -4,8 +4,8 @@
     android:versionName="@string/app_versionName" >
 
     <uses-sdk
-        android:minSdkVersion="10"
-        android:targetSdkVersion="14" />
+        android:minSdkVersion="14"
+        android:targetSdkVersion="18" />
 
     <uses-permission android:name="android.permission.INTERNET" />
 
@@ -13,11 +13,12 @@
         android:icon="@drawable/ic_launcher"
         android:label="@string/app_name"
         android:theme="@style/Theme.Sherlock.Light.DarkActionBar" 
-        android:name="GratisInBerlinApplication">
+        android:name="GratisInBerlinApplication"
+        android:allowBackup="true">
         <activity
             android:name=".MainActivity"
             android:label="@string/title_activity_main"
-            configChanges="keyboardHidden|orientation|screenSize">
+            android:configChanges="keyboardHidden|orientation|screenSize">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
@@ -27,7 +28,7 @@
         <activity
             android:name=".EventDetail"
             android:label="@string/title_activity_event_detail"
-            configChanges="keyboardHidden|orientation|screenSize">
+            android:configChanges="keyboardHidden|orientation|screenSize">
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value="de.hoffmann90.gratis.in.berlin.MainActivity" />

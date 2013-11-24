@@ -22,19 +22,20 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:textIsSelectable="true" />
-        
-        <TextView
-            android:id="@+id/textViewAdmission"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:textIsSelectable="true" />
 
         <TextView
             android:id="@+id/textViewLocation"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center_vertical"
-            android:gravity="center_vertical" />
+            android:gravity="center_vertical"
+            android:textIsSelectable="true" />
+        
+        <TextView
+            android:id="@+id/textViewAdmission"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textIsSelectable="true" />
 
         <TextView
             android:id="@+id/textViewDetails"
@@ -45,7 +46,8 @@
         <TextView
             android:id="@+id/textViewLink"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content" />
+            android:layout_height="wrap_content"
+            android:textIsSelectable="true" />
     </LinearLayout>
 
 </ScrollView>

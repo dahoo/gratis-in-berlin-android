@@ -13,6 +13,7 @@ import org.jsoup.select.Elements;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.Paint;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.AsyncTask;
@@ -45,7 +46,6 @@ public class EventDetail extends SherlockActivity {
 			if (this.exception != null) {
 				this.exception.printStackTrace();
 				activity.handleError(exception);
-			} else {
 			}
 		}
 		
@@ -58,7 +58,7 @@ public class EventDetail extends SherlockActivity {
 		protected Element doInBackground(String... urls) {			
 			Document doc;
 			try {
-				doc = Jsoup.connect(url).get();
+				doc = Jsoup.connect(url).timeout(10*1000).get();
 		        Element elementsHtml = doc.getElementById("gib_tip");
 				return elementsHtml;
 			} catch (IOException e) {
@@ -104,7 +104,8 @@ public class EventDetail extends SherlockActivity {
 		}
 		//TODO: Get end date (if available)
 		details = itemProps.select("[itemprop=description]").text().trim();
-		location = itemProps.select("[itemprop=location]").text().replace(" - zum Stadplan", "").trim();
+		location = itemProps.select("[itemprop=location]").text().replace(" - zum Stadtplan", "").trim();
+		System.out.println(location);
 		String linkHTML;
 		try {
 			link = text.select("div.urlInfo a").first().attr("href");
@@ -126,11 +127,8 @@ public class EventDetail extends SherlockActivity {
 
 		TextView locationText = (TextView) findViewById(R.id.textViewLocation);
 		locationText.setText(location);
-		Drawable img = this.getResources().getDrawable(
-				android.R.drawable.ic_dialog_map);
-		img.setBounds(0, 0, 60, 60);
-		locationText.setCompoundDrawablesWithIntrinsicBounds(img, null, null,
-				null);
+
+		locationText.setPaintFlags(locationText.getPaintFlags() | Paint.UNDERLINE_TEXT_FLAG);
 		locationText.setOnClickListener(new View.OnClickListener() {
 			public void onClick(View v) {
 				String uri = String.format("geo:0,0?q=%s", location);
@@ -202,10 +200,13 @@ public class EventDetail extends SherlockActivity {
 					String fromDate = dates[0].trim();
 					System.out.println(fromDate);
 					String[] fromDateParts = fromDate.split("\\.");
-					beginCalDate = new GregorianCalendar(
-							Integer.parseInt(fromDateParts[2]),
-							Integer.parseInt(fromDateParts[1]) - 1,
-							Integer.parseInt(fromDateParts[0]));
+					if (fromDateParts.length >= 2) {
+						beginCalDate = new GregorianCalendar(
+								Integer.parseInt(fromDateParts[2]),
+								Integer.parseInt(fromDateParts[1]) - 1,
+								Integer.parseInt(fromDateParts[0]));
+					} else
+						beginCalDate = new GregorianCalendar();
 					
 					if(dates.length > 1) {
 						String toDate = dates[1].trim();
